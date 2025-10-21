@@ -1,7 +1,7 @@
 apiVersion: kpt.dev/v1
 kind: Kptfile
 metadata:
-  name: free5gc-cp
+  name: free5gc-mongo
   annotations:
     config.kubernetes.io/local-config: "true"
 info:
