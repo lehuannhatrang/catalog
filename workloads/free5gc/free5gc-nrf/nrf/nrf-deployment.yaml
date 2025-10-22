@@ -2,44 +2,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: free5gc-webui
+  name: free5gc-nrf
   labels:
     app.kubernetes.io/version: "v3.1.1"
     project: free5gc
-    nf: webui
+    nf: nrf
 spec:
   replicas: 1
   selector:
     matchLabels:
       project: free5gc
-      nf: webui
+      nf: nrf
   template:
     metadata:
       labels:
         project: free5gc
-        nf: webui
+        nf: nrf
     spec:
-      initContainers:
-      - name: wait-mongo
-        image: busybox:1.32.0
-        env:
-        - name: DEPENDENCIES
-          value: mongodb:27017
-        command: ["sh", "-c", "until nc -z $DEPENDENCIES; do echo waiting for the MongoDB; sleep 2; done;"]
       containers:
-      - name: webui
-        image: towards5gs/free5gc-webui:v3.1.1
+      - name: nrf
+        image: towards5gs/free5gc-nrf:v3.1.1
         imagePullPolicy: IfNotPresent
+        securityContext:
+            {}
         ports:
-        - containerPort: 5000
-        command: ["./webconsole"]
-        args: ["-c", "../config/webuicfg.yaml"]
-        env:
+        - containerPort: 8000
+        command: ["./nrf"]
+        args: ["-c", "../config/nrfcfg.yaml"]
+        env: 
+          - name: DB_URI
+            value: mongodb://mongodb/free5gc
           - name: GIN_MODE
             value: release
         volumeMounts:
         - mountPath: /free5gc/config/
-          name: webui-volume
+          name: nrf-volume
         resources:
             limits:
               cpu: 100m
@@ -54,8 +51,8 @@ spec:
           failureThreshold:  40
           successThreshold: 1
           httpGet:
-            scheme: HTTP
-            port: 5000
+            scheme: "HTTP"
+            port: 8000
         livenessProbe:
           initialDelaySeconds: 120
           periodSeconds: 10
@@ -63,14 +60,14 @@ spec:
           failureThreshold: 3
           successThreshold: 1
           httpGet:
-            scheme: HTTP
-            port: 5000
+            scheme: "HTTP"
+            port: 8000
       dnsPolicy: ClusterFirst
       restartPolicy: Always
 
       volumes:
-      - name: webui-volume
+      - name: nrf-volume
         projected:
           sources:
           - configMap:
-              name: webui-configmap
+              name: nrf-configmap
